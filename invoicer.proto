@@ -1,0 +1,61 @@
+// Definition of our API. Add a service with RPC methods 
+
+syntax="proto3";
+
+option go_package = "github.com/andykimchris/go-grpc-cc/invoicer";
+
+message Amount {
+    int64 amount = 1;
+    string currency = 2;    
+}
+
+message MultipleAmounts {
+    repeated Amount amounts = 1;
+}
+
+message CreateRequest {
+    reserved 1;
+    // Amount amount = 1;
+    string from = 2;
+    string to = 3;
+    string VATNum = 4;
+
+    // oneof invoice {
+    //     string invoice_number = 5;
+    //     string invoice_date = 6;
+    // }
+
+    oneof payment_amount {
+        Amount single_amount = 5;
+        MultipleAmounts multiple_amounts = 6;
+    }
+}
+
+message CreateResponse {
+    bytes pdf = 1;
+    bytes docx = 2;
+    bytes metadata = 3;
+}
+ 
+
+message ExchangeRequest {
+    Amount source = 1;
+    string target_currency = 2;   
+}
+
+
+message SumsResponse {
+    int64 total = 1;
+}
+
+message ExchangeResponse {
+    int64 amount = 1;
+    string currency = 2;   
+}
+
+service Invoicer {
+    rpc Create(CreateRequest) returns (CreateResponse);
+    rpc SumNums(MultipleAmounts) returns (SumsResponse);
+    rpc ExchangeConverter(ExchangeRequest) returns (ExchangeResponse);
+    // rpc GetGroupWinner(group.Group) returns (group.Winner);
+}
