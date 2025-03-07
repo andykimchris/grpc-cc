@@ -1,4 +1,4 @@
-module github.com/andykimchris/go-grpc-cc
+module github.com/andykimchris/grpc-cc
 
 go 1.23.5
 

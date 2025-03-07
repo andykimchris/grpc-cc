@@ -2,7 +2,7 @@
 
 syntax="proto3";
 
-option go_package = "github.com/andykimchris/go-grpc-cc/invoicer";
+option go_package = "github.com/andykimchris/grpc-cc/invoicer";
 
 message Amount {
     int64 amount = 1;
