@@ -10,5 +10,3 @@ require (
 	google.golang.org/grpc v1.71.0 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect
 )
-
-replace github.com/andykimchris/go-grpc-cc/invoicer => ../invoicer

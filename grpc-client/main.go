@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	pb "../invoicer"
+	pb "github.com/andykimchris/go-grpc-cc/invoicer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
