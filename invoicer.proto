@@ -53,9 +53,25 @@ message ExchangeResponse {
     string currency = 2;   
 }
 
+message InvoiceRequest {
+    string invoice_number = 1;
+    string invoice_name = 2;
+    Amount amount = 3;
+}
+
+message UploadSummaryResponse {
+    int64 total_invoices = 1;
+    int64 total_amount = 2;
+    string currency = 3;
+}
+
 service Invoicer {
     rpc Create(CreateRequest) returns (CreateResponse);
     rpc SumNums(MultipleAmounts) returns (SumsResponse);
     rpc ExchangeConverter(ExchangeRequest) returns (ExchangeResponse);
     // rpc GetGroupWinner(group.Group) returns (group.Winner);
+
+
+    // client side streaming
+    rpc UploadInvoices(stream InvoiceRequest) returns (UploadSummaryResponse);
 }
