@@ -1,5 +1,5 @@
-github.com/andykimchris/grpc-cc v0.0.0-20250307095125-bdca10ba91df h1:3QCWp33X8eB8rlTrpPJHDgzOtmTPaZl3JKTfhoSw6ac=
-github.com/andykimchris/grpc-cc v0.0.0-20250307095125-bdca10ba91df/go.mod h1:rYx5XQisrroEM6na+Lv7K1vEyk8BATzONbQTFQMDut4=
+github.com/andykimchris/grpc-cc v0.0.0-20250309132052-b440d5df410c h1:+zyDBMOmpAGoW5X7oqiM25/9uM/sqN2j08Yz4OPE0s4=
+github.com/andykimchris/grpc-cc v0.0.0-20250309132052-b440d5df410c/go.mod h1:rYx5XQisrroEM6na+Lv7K1vEyk8BATzONbQTFQMDut4=
 github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
 github.com/go-logr/logr v1.4.2/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-logr/stdr v1.2.2 h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=
