@@ -25,6 +25,7 @@ const (
 	Invoicer_SumNums_FullMethodName           = "/Invoicer/SumNums"
 	Invoicer_ExchangeConverter_FullMethodName = "/Invoicer/ExchangeConverter"
 	Invoicer_UploadInvoices_FullMethodName    = "/Invoicer/UploadInvoices"
+	Invoicer_ListInvoices_FullMethodName      = "/Invoicer/ListInvoices"
 )
 
 // InvoicerClient is the client API for Invoicer service.
@@ -36,6 +37,8 @@ type InvoicerClient interface {
 	ExchangeConverter(ctx context.Context, in *ExchangeRequest, opts ...grpc.CallOption) (*ExchangeResponse, error)
 	// client side streaming
 	UploadInvoices(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[InvoiceRequest, UploadSummaryResponse], error)
+	// server side streaming
+	ListInvoices(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InvoiceRequest], error)
 }
 
 type invoicerClient struct {
@@ -89,6 +92,25 @@ func (c *invoicerClient) UploadInvoices(ctx context.Context, opts ...grpc.CallOp
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Invoicer_UploadInvoicesClient = grpc.ClientStreamingClient[InvoiceRequest, UploadSummaryResponse]
 
+func (c *invoicerClient) ListInvoices(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InvoiceRequest], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Invoicer_ServiceDesc.Streams[1], Invoicer_ListInvoices_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Empty, InvoiceRequest]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Invoicer_ListInvoicesClient = grpc.ServerStreamingClient[InvoiceRequest]
+
 // InvoicerServer is the server API for Invoicer service.
 // All implementations must embed UnimplementedInvoicerServer
 // for forward compatibility.
@@ -98,6 +120,8 @@ type InvoicerServer interface {
 	ExchangeConverter(context.Context, *ExchangeRequest) (*ExchangeResponse, error)
 	// client side streaming
 	UploadInvoices(grpc.ClientStreamingServer[InvoiceRequest, UploadSummaryResponse]) error
+	// server side streaming
+	ListInvoices(*Empty, grpc.ServerStreamingServer[InvoiceRequest]) error
 	mustEmbedUnimplementedInvoicerServer()
 }
 
@@ -119,6 +143,9 @@ func (UnimplementedInvoicerServer) ExchangeConverter(context.Context, *ExchangeR
 }
 func (UnimplementedInvoicerServer) UploadInvoices(grpc.ClientStreamingServer[InvoiceRequest, UploadSummaryResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method UploadInvoices not implemented")
+}
+func (UnimplementedInvoicerServer) ListInvoices(*Empty, grpc.ServerStreamingServer[InvoiceRequest]) error {
+	return status.Errorf(codes.Unimplemented, "method ListInvoices not implemented")
 }
 func (UnimplementedInvoicerServer) mustEmbedUnimplementedInvoicerServer() {}
 func (UnimplementedInvoicerServer) testEmbeddedByValue()                  {}
@@ -202,6 +229,17 @@ func _Invoicer_UploadInvoices_Handler(srv interface{}, stream grpc.ServerStream)
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Invoicer_UploadInvoicesServer = grpc.ClientStreamingServer[InvoiceRequest, UploadSummaryResponse]
 
+func _Invoicer_ListInvoices_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(InvoicerServer).ListInvoices(m, &grpc.GenericServerStream[Empty, InvoiceRequest]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Invoicer_ListInvoicesServer = grpc.ServerStreamingServer[InvoiceRequest]
+
 // Invoicer_ServiceDesc is the grpc.ServiceDesc for Invoicer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -227,6 +265,11 @@ var Invoicer_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "UploadInvoices",
 			Handler:       _Invoicer_UploadInvoices_Handler,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "ListInvoices",
+			Handler:       _Invoicer_ListInvoices_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "invoicer.proto",

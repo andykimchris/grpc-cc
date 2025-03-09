@@ -65,6 +65,9 @@ message UploadSummaryResponse {
     string currency = 3;
 }
 
+
+message Empty {}
+
 service Invoicer {
     rpc Create(CreateRequest) returns (CreateResponse);
     rpc SumNums(MultipleAmounts) returns (SumsResponse);
@@ -74,4 +77,7 @@ service Invoicer {
 
     // client side streaming
     rpc UploadInvoices(stream InvoiceRequest) returns (UploadSummaryResponse);
+
+    // server side streaming
+    rpc ListInvoices(Empty) returns (stream InvoiceRequest);
 }

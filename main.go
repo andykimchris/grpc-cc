@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"time"
@@ -17,6 +18,8 @@ type InvoicerServer interface {
 	Create(context.Context, *invoicer.CreateRequest) (*invoicer.CreateResponse, error)
 	SumNums(context.Context, *invoicer.MultipleAmounts) (*invoicer.SumsResponse, error)
 	ExchangeConverter(context.Context, *invoicer.ExchangeRequest) (*invoicer.ExchangeResponse, error)
+	UploadInvoices(context.Context, *invoicer.InvoiceRequest) (*invoicer.UploadSummaryResponse, error)
+	ListInvoices(context.Context, *invoicer.Empty) (*invoicer.InvoiceRequest, error)
 }
 
 type myInvoicerServer struct {
@@ -68,28 +71,77 @@ func (s myInvoicerServer) SumNums(ctx context.Context, req *invoicer.MultipleAmo
 	return &invoicer.SumsResponse{Total: count}, nil
 }
 
-// func GetGroupWinner(ctx context.Context, req *group.Group) (*group.Winner, error) {
+func (s myInvoicerServer) ExchangeConverter(ctx context.Context, req *invoicer.ExchangeRequest) (*invoicer.ExchangeResponse, error) {
+	switch req.TargetCurrency {
+	case "USD":
+		amnt := req.Source.Amount / 120
+		return &invoicer.ExchangeResponse{
+			Amount:   amnt,
+			Currency: req.TargetCurrency,
+		}, nil
+	case "EUR":
+		amnt := req.Source.Amount / 140
+		return &invoicer.ExchangeResponse{
+			Amount:   amnt,
+			Currency: req.TargetCurrency,
+		}, nil
+	default:
+		return nil, nil
+	}
+}
 
-// }
+// UploadInvoices handles client-side streaming of invoices. The server will
+// accept a stream of InvoiceRequest messages and send a single
+// UploadSummaryResponse message back to the client once the stream is complete.
+func (s myInvoicerServer) UploadInvoices(stream invoicer.Invoicer_UploadInvoicesServer) error {
+	var totalAmount int64
 
-// func (s myInvoicerServer) ExchangeConverter(ctx context.Context, req *invoicer.ExchangeRequest) (*invoicer.ExchangeResponse, error) {
-// 	switch req.TargetCurrency {
-// 	case "USD":
-// 		amnt := req.Source.Amount / 120
-// 		return &invoicer.ExchangeResponse{
-// 			Amount:   amnt,
-// 			Currency: req.TargetCurrency,
-// 		}, nil
-// 	case "EUR":
-// 		amnt := req.Source.Amount / 140
-// 		return &invoicer.ExchangeResponse{
-// 			Amount:   amnt,
-// 			Currency: req.TargetCurrency,
-// 		}, nil
-// 	default:
-// 		return nil, nil
-// 	}
-// }
+	for {
+		invoice, err := stream.Recv()
+		if err == io.EOF {
+			log.Printf("Final computed total: %d %s", totalAmount, "USD")
+			return stream.SendAndClose(&invoicer.UploadSummaryResponse{TotalAmount: totalAmount, Currency: "USD"})
+		}
+
+		if err != nil {
+			log.Fatalf("unable to receive stream: %s", err)
+		}
+
+		fmt.Printf("Received invoice: %v, %d, \n", invoice, totalAmount)
+		totalAmount += invoice.Amount.Amount
+	}
+}
+
+func (s myInvoicerServer) ListInvoices(req *invoicer.Empty, stream invoicer.Invoicer_ListInvoicesServer) error {
+	invoices := []*invoicer.InvoiceRequest{
+		{
+			InvoiceNumber: "INV-001",
+			InvoiceName:   "Andy",
+			Amount: &invoicer.Amount{
+				Amount:   1500,
+				Currency: "USD",
+			},
+		},
+		{
+			InvoiceNumber: "INV-002",
+			InvoiceName:   "Jamie",
+			Amount: &invoicer.Amount{
+				Amount:   4500,
+				Currency: "USD",
+			},
+		},
+	}
+
+	for _, invoice := range invoices {
+		fmt.Println("Sending invoice: ", invoice.InvoiceNumber)
+		if err := stream.Send(invoice); err != nil {
+			log.Fatalf("could not send invoice: %v", err)
+		}
+		time.Sleep(time.Millisecond.Abs() * 1350)
+	}
+
+	return nil
+}
 
 func main() {
 	lis, err := net.Listen("tcp", ":8080")
