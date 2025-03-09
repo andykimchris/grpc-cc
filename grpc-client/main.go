@@ -59,4 +59,46 @@ func main() {
 	}
 	fmt.Printf("Invoice created witth info: Docx %s, Pdf %s\n", resp.Docx, resp.Pdf)
 
+	// CREATING A STREAM REQUEST TO UPLOAD INVOICE
+	fmt.Println("CLIENT SIDE STREAMING...")
+	stream, err := client.UploadInvoices(context.Background())
+	if err != nil {
+		log.Fatalf("could not upload invoices: %v", err)
+	}
+
+	invoices := []*pb.InvoiceRequest{
+		{
+			InvoiceNumber: "INV-001",
+			InvoiceName:   "Andy",
+			Amount: &pb.Amount{
+				Amount:   1500,
+				Currency: "USD",
+			},
+		},
+		{
+			InvoiceNumber: "INV-002",
+			InvoiceName:   "Jamie",
+			Amount: &pb.Amount{
+				Amount:   4500,
+				Currency: "USD",
+			},
+		},
+	}
+
+	for _, invoice := range invoices {
+		fmt.Println("Sending invoice: ", invoice)
+		if err := stream.Send(invoice); err != nil {
+			log.Fatalf("could not send invoice: %v", err)
+		}
+		time.Sleep(time.Millisecond.Abs() * 1350)
+	}
+
+	// close stream and receive response
+	serverResponse, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("could not receive response: %v", err)
+	}
+
+	log.Printf("Server response: %s | Total Amount: %d, %s", serverResponse, serverResponse.TotalAmount, serverResponse.Currency)
+
 }
