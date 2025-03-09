@@ -101,4 +101,20 @@ func main() {
 
 	log.Printf("Server response: %s | Total Amount: %d, %s", serverResponse, serverResponse.TotalAmount, serverResponse.Currency)
 
+	// STREAM REQUEST TO LIST INVOICES
+	fmt.Println("SERVER SIDE STREAMING...")
+	listStream, err := client.ListInvoices(context.Background(), &pb.Empty{})
+	if err != nil {
+		log.Fatalf("could not list invoices: %v", err)
+	}
+
+	// TODO: Handle EOF error
+	for {
+		invoice, err := listStream.Recv()
+		if err != nil {
+			log.Fatalf("could not receive invoice: %v", err)
+		}
+		fmt.Printf("Received invoice: %v\n", invoice)
+	}
+
 }
