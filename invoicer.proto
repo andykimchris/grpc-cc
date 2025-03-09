@@ -65,6 +65,10 @@ message UploadSummaryResponse {
     string currency = 3;
 }
 
+message ChatMessage {
+    string sender = 1;
+    string message = 2;
+}
 
 message Empty {}
 
@@ -80,4 +84,7 @@ service Invoicer {
 
     // server side streaming
     rpc ListInvoices(Empty) returns (stream InvoiceRequest);
+
+    // bidirectional streaming
+    rpc ChatWithClient(stream ChatMessage) returns (stream ChatMessage);
 }

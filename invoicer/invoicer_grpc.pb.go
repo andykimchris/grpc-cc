@@ -26,6 +26,7 @@ const (
 	Invoicer_ExchangeConverter_FullMethodName = "/Invoicer/ExchangeConverter"
 	Invoicer_UploadInvoices_FullMethodName    = "/Invoicer/UploadInvoices"
 	Invoicer_ListInvoices_FullMethodName      = "/Invoicer/ListInvoices"
+	Invoicer_ChatWithClient_FullMethodName    = "/Invoicer/ChatWithClient"
 )
 
 // InvoicerClient is the client API for Invoicer service.
@@ -39,6 +40,7 @@ type InvoicerClient interface {
 	UploadInvoices(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[InvoiceRequest, UploadSummaryResponse], error)
 	// server side streaming
 	ListInvoices(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InvoiceRequest], error)
+	ChatWithClient(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ChatMessage, ChatMessage], error)
 }
 
 type invoicerClient struct {
@@ -111,6 +113,19 @@ func (c *invoicerClient) ListInvoices(ctx context.Context, in *Empty, opts ...gr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Invoicer_ListInvoicesClient = grpc.ServerStreamingClient[InvoiceRequest]
 
+func (c *invoicerClient) ChatWithClient(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ChatMessage, ChatMessage], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Invoicer_ServiceDesc.Streams[2], Invoicer_ChatWithClient_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ChatMessage, ChatMessage]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Invoicer_ChatWithClientClient = grpc.BidiStreamingClient[ChatMessage, ChatMessage]
+
 // InvoicerServer is the server API for Invoicer service.
 // All implementations must embed UnimplementedInvoicerServer
 // for forward compatibility.
@@ -122,6 +137,7 @@ type InvoicerServer interface {
 	UploadInvoices(grpc.ClientStreamingServer[InvoiceRequest, UploadSummaryResponse]) error
 	// server side streaming
 	ListInvoices(*Empty, grpc.ServerStreamingServer[InvoiceRequest]) error
+	ChatWithClient(grpc.BidiStreamingServer[ChatMessage, ChatMessage]) error
 	mustEmbedUnimplementedInvoicerServer()
 }
 
@@ -146,6 +162,9 @@ func (UnimplementedInvoicerServer) UploadInvoices(grpc.ClientStreamingServer[Inv
 }
 func (UnimplementedInvoicerServer) ListInvoices(*Empty, grpc.ServerStreamingServer[InvoiceRequest]) error {
 	return status.Errorf(codes.Unimplemented, "method ListInvoices not implemented")
+}
+func (UnimplementedInvoicerServer) ChatWithClient(grpc.BidiStreamingServer[ChatMessage, ChatMessage]) error {
+	return status.Errorf(codes.Unimplemented, "method ChatWithClient not implemented")
 }
 func (UnimplementedInvoicerServer) mustEmbedUnimplementedInvoicerServer() {}
 func (UnimplementedInvoicerServer) testEmbeddedByValue()                  {}
@@ -240,6 +259,13 @@ func _Invoicer_ListInvoices_Handler(srv interface{}, stream grpc.ServerStream) e
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Invoicer_ListInvoicesServer = grpc.ServerStreamingServer[InvoiceRequest]
 
+func _Invoicer_ChatWithClient_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(InvoicerServer).ChatWithClient(&grpc.GenericServerStream[ChatMessage, ChatMessage]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Invoicer_ChatWithClientServer = grpc.BidiStreamingServer[ChatMessage, ChatMessage]
+
 // Invoicer_ServiceDesc is the grpc.ServiceDesc for Invoicer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -270,6 +296,12 @@ var Invoicer_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "ListInvoices",
 			Handler:       _Invoicer_ListInvoices_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "ChatWithClient",
+			Handler:       _Invoicer_ChatWithClient_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "invoicer.proto",
