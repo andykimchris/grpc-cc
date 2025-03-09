@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	pb "github.com/andykimchris/grpc-cc/invoicer"
@@ -102,19 +104,64 @@ func main() {
 	log.Printf("Server response: %s | Total Amount: %d, %s", serverResponse, serverResponse.TotalAmount, serverResponse.Currency)
 
 	// STREAM REQUEST TO LIST INVOICES
-	fmt.Println("SERVER SIDE STREAMING...")
-	listStream, err := client.ListInvoices(context.Background(), &pb.Empty{})
+	// fmt.Println("SERVER SIDE STREAMING...")
+	// listStream, err := client.ListInvoices(context.Background(), &pb.Empty{})
+	// if err != nil {
+	// 	log.Fatalf("could not list invoices: %v", err)
+	// }
+
+	// // TODO: Handle EOF error
+	// for {
+	// 	invoice, err := listStream.Recv()
+	// 	if err != nil {
+	// 		log.Fatalf("could not receive invoice: %v", err)
+	// 	}
+	// 	fmt.Printf("Received invoice: %v\n", invoice)
+	// }
+
+	// BIDIRECTIONAL STREAMING
+	fmt.Println("BIDIRECTIONAL STREAMING...")
+
+	streamChat, err := client.ChatWithClient(context.Background())
 	if err != nil {
-		log.Fatalf("could not list invoices: %v", err)
+		log.Fatalf("Error opening stream %v", err)
 	}
 
-	// TODO: Handle EOF error
-	for {
-		invoice, err := listStream.Recv()
-		if err != nil {
-			log.Fatalf("could not receive invoice: %v", err)
+	// read input from console
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Start chatting with the server! Type 'exit' to quit")
+
+	go func() {
+		for {
+			response, err := streamChat.Recv()
+			if err != nil {
+				log.Fatalf("Error receiving message %v", err)
+			}
+			fmt.Println("Server response: ", response.Sender, ":", response.Message)
 		}
-		fmt.Printf("Received invoice: %v\n", invoice)
+	}()
+
+	for {
+		fmt.Println("You: ")
+		scanner.Scan()
+		text := scanner.Text()
+		if text == "exit" {
+			fmt.Println("Goodbye!")
+			break
+		}
+
+		// send msg
+		msg := &pb.ChatMessage{
+			Sender:  "Client",
+			Message: text,
+		}
+
+		if err := streamChat.Send(msg); err != nil {
+			log.Fatalf("Error sending message: %v", err)
+		}
+
+		time.Sleep(time.Millisecond * 500)
 	}
 
+	streamChat.CloseSend()
 }
