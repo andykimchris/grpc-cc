@@ -20,6 +20,7 @@ type InvoicerServer interface {
 	ExchangeConverter(context.Context, *invoicer.ExchangeRequest) (*invoicer.ExchangeResponse, error)
 	UploadInvoices(context.Context, *invoicer.InvoiceRequest) (*invoicer.UploadSummaryResponse, error)
 	ListInvoices(context.Context, *invoicer.Empty) (*invoicer.InvoiceRequest, error)
+	ChatWithClient(context.Context, *invoicer.ChatMessage) (*invoicer.ChatMessage, error)
 }
 
 type myInvoicerServer struct {
@@ -141,6 +142,35 @@ func (s myInvoicerServer) ListInvoices(req *invoicer.Empty, stream invoicer.Invo
 	}
 
 	return nil
+}
+
+// bidirectional streaming rpc method
+func (s myInvoicerServer) ChatWithClient(stream invoicer.Invoicer_ChatWithClientServer) error {
+	log.Println("ChatWithClient method invoked, bidirectional streaming started")
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("Client has closed the connection")
+			return nil
+		}
+		if err != nil {
+			log.Fatalf("unable to receive message: %s", err)
+			return err
+		}
+
+		log.Printf("Received message %s from client: %s", msg.Message, msg.Sender)
+
+		// send response back to client
+		reply := &invoicer.ChatMessage{
+			Message: "Hello from server",
+			Sender:  "Server Andy",
+		}
+
+		if err := stream.Send(reply); err != nil {
+			log.Fatalf("unable to send message: %s", err)
+			return err
+		}
+	}
 }
 
 func main() {

@@ -40,6 +40,7 @@ type InvoicerClient interface {
 	UploadInvoices(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[InvoiceRequest, UploadSummaryResponse], error)
 	// server side streaming
 	ListInvoices(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InvoiceRequest], error)
+	// bidirectional streaming
 	ChatWithClient(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ChatMessage, ChatMessage], error)
 }
 
@@ -137,6 +138,7 @@ type InvoicerServer interface {
 	UploadInvoices(grpc.ClientStreamingServer[InvoiceRequest, UploadSummaryResponse]) error
 	// server side streaming
 	ListInvoices(*Empty, grpc.ServerStreamingServer[InvoiceRequest]) error
+	// bidirectional streaming
 	ChatWithClient(grpc.BidiStreamingServer[ChatMessage, ChatMessage]) error
 	mustEmbedUnimplementedInvoicerServer()
 }
